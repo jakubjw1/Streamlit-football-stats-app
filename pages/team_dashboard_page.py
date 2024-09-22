@@ -609,5 +609,5 @@ if selected_league and selected_team and selected_season:
 else:
     st.title("👈 Select a team from the sidebar!")
     st.divider()
-    st.info("Please select a league and team to view their match logs and stats.")
+    st.info("Please select a league and team to view their match logs and stats.\nYou can also change the season selection to see past data.")
     
