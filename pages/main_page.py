@@ -7,7 +7,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-st.logo("assets/app_logo/statfield-high-resolution-logo-transparent.png")
+st.logo("assets/app_logo/statfield-high-resolution-logo-transparent.png", size="large")
 
 st.title("StatField")
 

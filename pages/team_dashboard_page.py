@@ -3,6 +3,7 @@ import re
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+import db_connection
 
 ### DEFINITIONS
 
@@ -434,7 +435,7 @@ st.set_page_config(
   layout="wide",
   initial_sidebar_state="expanded",
 )
-st.logo("assets/app_logo/statfield-high-resolution-logo-transparent.png")
+st.logo("assets/app_logo/statfield-high-resolution-logo-transparent.png", size="large")
 st.sidebar.header('Sidebar')
 
 # Sidebar - League selection
@@ -448,8 +449,6 @@ if selected_league:
 selected_season = st.sidebar.selectbox('Select Season', seasons, index=0)
 
 if selected_league and selected_team and selected_season:
-    
-    
 
     team_url = leagues_teams[selected_league][selected_team]
     team_url_with_season = team_url + selected_season
@@ -610,4 +609,5 @@ else:
     st.title("👈 Select a team from the sidebar!")
     st.divider()
     st.info("Please select a league and team to view their match logs and stats.\nYou can also change the season selection to see past data.")
-    
+    df = db_connection.get_users
+    st.dataframe(df)
