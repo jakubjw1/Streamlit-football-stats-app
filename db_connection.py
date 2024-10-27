@@ -1,6 +1,6 @@
 import streamlit as st
 
-conn = st.connection("sql", type="sql")
+conn = st.connection("mysql", type="sql")
 
 def get_users():
   session = conn.session()
