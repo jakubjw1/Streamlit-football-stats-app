@@ -473,13 +473,10 @@ def update_latest_match_stats():
         away_team = match["opponent"]
         venue = match["venue"]
 
-        st.write(match_id, match_url, home_team, away_team, venue)
         st.write(f"📊 Updating stats for match {idx + 1}/{total_matches} ({latest_season})...")
 
         field_players_stats, keepers_stats = scrap_match_stats(match_url, home_team, away_team, venue)
 
-        st.dataframe(field_players_stats)
-        st.dataframe(keepers_stats)
         if field_players_stats.empty or keepers_stats.empty:
             st.warning(f"⚠️ No stats data found for match {match_id}")
             continue
