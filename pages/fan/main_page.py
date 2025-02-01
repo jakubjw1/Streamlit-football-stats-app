@@ -1,12 +1,5 @@
 import streamlit as st
 
-st.set_page_config(
-    page_title="StatField - Main Page",
-    page_icon="assets/app_logo/statfield-favicon-green.png",
-    layout="centered",
-    initial_sidebar_state="expanded",
-)
-
 st.logo("assets/app_logo/statfield-high-resolution-logo-transparent.png", size="large")
 
 st.title("StatField")
@@ -17,6 +10,3 @@ This app provides easy way to follow your favourite football team performance an
 """)
 
 st.image("assets/gambling-football-game-bet-concept.jpg", caption="Designed by Freepik (https://www.freepik.com/)")
-
-
-
