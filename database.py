@@ -1,9 +1,6 @@
 import streamlit as st
 import pandas as pd
 import datetime
-import re
-import time
-import random
 from st_supabase_connection import SupabaseConnection
 from scrapers import scrap_team_matchlogs, scrap_match_stats
 
@@ -182,9 +179,6 @@ def update_all_matches():
             else:
                 st.warning(f"⚠️ No data found for {team_name} ({season})")
 
-            wait_time = random.uniform(3, 4.5)
-            time.sleep(wait_time)
-
     update_last_updated_time()
     st.success("🎉 All matches have been updated!")
 
@@ -213,9 +207,6 @@ def update_last_season_matches():
             st.success(f"✅ Updated {team_name} ({seasons[0]})")
         else:
             st.warning(f"⚠️ No data found for {team_name} ({seasons[0]})")
-
-        wait_time = random.uniform(3, 4.5)
-        time.sleep(wait_time)
 
     update_last_updated_time()
 
