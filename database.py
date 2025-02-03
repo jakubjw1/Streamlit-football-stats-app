@@ -378,6 +378,13 @@ def get_match_player_stats_by_team(match_id, team_1, team_2):
     except Exception as e:
         return (pd.DataFrame(), pd.DataFrame()), (pd.DataFrame(), pd.DataFrame())
 
+# Checks if the statistics are already in database    
+def stats_exist(match_id):
+    response = supabase.table("match_player_stats").select("id").eq("match_id", match_id).execute()
+    if response.data and len(response.data) > 0:
+        return True
+    return False
+
 # Update all matchstats for all teams and all seasons
 def update_all_match_stats():
     teams = get_all_teams()
@@ -408,6 +415,10 @@ def update_all_match_stats():
                 match_report_link = match["match_report_link"]
                 opponent = match["opponent"]
                 venue = match["venue"]
+
+                if stats_exist(match_id):
+                    st.write(f"Stats for {team_name} vs {opponent} ({season}) are already in database.")
+                    continue
 
                 if not match_report_link:
                     st.warning(f"⚠️ No match report link for {team_name} vs {opponent} ({season})")
@@ -459,6 +470,8 @@ def update_latest_match_stats():
 
     for idx, match in played_matches.iterrows():
         match_id = match["id"]
+        if stats_exist(match_id):
+            continue
         match_url = match["match_report_link"]
         home_team = get_team_name_by_id(match["team_id"])
         away_team = match["opponent"]
@@ -482,8 +495,6 @@ def update_latest_match_stats():
                 st.error(f"❌ Error updating stats for match {match_id}: {e}")
 
     st.success(f"🎉 All played match stats for {latest_season} have been updated!")
-
-
 
 # -------------------------
 # UTILITY FUNCTIONS
