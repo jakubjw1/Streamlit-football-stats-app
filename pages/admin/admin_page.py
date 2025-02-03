@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from email_validator import validate_email, EmailNotValidError
 import bcrypt
-from pages.fan.team_dashboard_page import leagues_teams
+from pages.team_dashboard_page import leagues_teams
 from database import (
     get_all_users,
     update_user_data,

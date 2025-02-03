@@ -1,7 +1,7 @@
 import streamlit as st
 from database import supabase
 import bcrypt
-from pages.fan.team_dashboard_page import leagues_teams
+from pages.team_dashboard_page import leagues_teams
 from email_validator import validate_email, EmailNotValidError
 
 st.title("Account Settings :material/settings:")

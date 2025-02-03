@@ -9,7 +9,7 @@ st.set_page_config(
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from database import supabase, update_last_season_matches
-from pages.fan.team_dashboard_page import leagues_teams
+from pages.team_dashboard_page import leagues_teams
 from email_validator import validate_email, EmailNotValidError
 import bcrypt
 import time
@@ -140,17 +140,17 @@ role = st.session_state.role
 
 login_page = st.Page(login, title="Log in", icon=":material/login:")
 logout_page = st.Page(logout, title="Log out", icon=":material/logout:")
+main_page = st.Page("pages/main_page.py", title="Main Page", icon=":material/home:")
+team_dashboard_page = st.Page("pages/team_dashboard_page.py", title="Team Dashboard", icon=":material/groups:")
 settings_page = st.Page("pages/account_page.py", title="Account", icon=":material/settings:")
-main_page = st.Page("pages/fan/main_page.py", title="Main Page", icon=":material/home:")
-team_dashboard_page = st.Page("pages/fan/team_dashboard_page.py", title="Team Dashboard", icon=":material/groups:")
 coach_page = st.Page("pages/coach/coach_page.py", title="Coach Page", icon=":material/sports:")
 admin_page = st.Page("pages/admin/admin_page.py", title="Admin Page", icon=":material/admin_panel_settings:")
 
 account_pages = [settings_page, logout_page]
 guest_pages = [main_page, team_dashboard_page, login_page]
 fan_pages = [main_page, team_dashboard_page]
-coach_pages = [coach_page]
-admin_pages = [admin_page]
+coach_pages = [main_page, team_dashboard_page, coach_page]
+admin_pages = [main_page, team_dashboard_page, admin_page]
 
 page_dict = {}
 if st.session_state.role == "fan":
