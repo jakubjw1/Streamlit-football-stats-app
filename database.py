@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import unicodedata
 import datetime
 from st_supabase_connection import SupabaseConnection
 from scrapers import scrap_team_matchlogs, scrap_match_stats
@@ -7,21 +8,130 @@ from scrapers import scrap_team_matchlogs, scrap_match_stats
 seasons = ['2024-2025', '2023-2024', '2022-2023', '2021-2022', '2020-2021', 
            '2019-2020', '2018-2019', '2017-2018', '2016-2017', '2015-2016', '2014-2015']
 
+# App leagues and teams with their links
+EPL_dict = {
+  "Arsenal":"https://fbref.com/en/squads/18bb7c10/",
+  "Aston Villa":"https://fbref.com/en/squads/8602292d/",
+  "Bournemouth":"https://fbref.com/en/squads/4ba7cbea/",
+  "Brentford": "https://fbref.com/en/squads/cd051869/",
+  "Brighton":"https://fbref.com/en/squads/d07537b9/",
+  "Chelsea": "https://fbref.com/en/squads/cff3d9bb/",
+  "Crystal Palace": "https://fbref.com/en/squads/47c64c55/",
+  "Everton": "https://fbref.com/en/squads/d3fd31cc/",
+  "Fulham": "https://fbref.com/en/squads/fd962109/",
+  "Ipswich Town": "https://fbref.com/en/squads/b74092de/",
+  "Leicester City":"https://fbref.com/en/squads/a2d435b3/",
+  "Liverpool":"https://fbref.com/en/squads/822bd0ba/",
+  "Manchester City": "https://fbref.com/en/squads/b8fd03ef/",
+  "Manchester United": "https://fbref.com/en/squads/19538871/",
+  "Newcastle":"https://fbref.com/en/squads/b2b47a98/",
+  "Nottingham Forest": "https://fbref.com/en/squads/e4a775cb/",
+  "Southampton": "https://fbref.com/en/squads/33c895d4/",
+  "Tottenham Hotspur": "https://fbref.com/en/squads/361ca564/",
+  "West Ham":"https://fbref.com/en/squads/7c21e445/",
+  "Wolves": "https://fbref.com/en/squads/8cec06e1/"
+}
+
+LaLiga_dict = {
+  "Alaves":"https://fbref.com/en/squads/8d6fd021/",
+  "Athletic Club":"https://fbref.com/en/squads/2b390eca/",
+  "Atletico Madrid":"https://fbref.com/en/squads/db3b9613/",
+  "Barcelona":"https://fbref.com/en/squads/206d90db/",
+  "Betis":"https://fbref.com/en/squads/fc536746/",
+  "Celta Vigo":"https://fbref.com/en/squads/f25da7fb/",
+  "Espanyol":"https://fbref.com/en/squads/a8661628/",
+  "Getafe":"https://fbref.com/en/squads/7848bd64/",
+  "Girona":"https://fbref.com/en/squads/9024a00a/",
+  "Las Palmas":"https://fbref.com/en/squads/0049d422/",
+  "Leganes":"https://fbref.com/en/squads/7c6f2c78/",
+  "Mallorca":"https://fbref.com/en/squads/2aa12281/",
+  "Osasuna":"https://fbref.com/en/squads/03c57e2b/",
+  "Rayo Vallecano":"https://fbref.com/en/squads/98e8af82/",
+  "Real Madrid":"https://fbref.com/en/squads/53a2f082/",
+  "Real Sociedad":"https://fbref.com/en/squads/e31d1cd9/",
+  "Sevilla":"https://fbref.com/en/squads/ad2be733/",
+  "Valencia":"https://fbref.com/en/squads/dcc91a7b/",
+  "Valladolid":"https://fbref.com/en/squads/17859612/",
+  "Villarreal":"https://fbref.com/en/squads/2a8183b3/",
+}
+
+SerieA_dict = {
+  "Atalanta":"https://fbref.com/en/squads/922493f3/",
+  "Bologna":"https://fbref.com/en/squads/1d8099f8/",
+  "Cagliari":"https://fbref.com/en/squads/c4260e09/",
+  "Como": "https://fbref.com/en/squads/28c9c3cd/",
+  "Empoli":"https://fbref.com/en/squads/a3d88bd8/",
+  "Fiorentina":"https://fbref.com/en/squads/421387cf/",
+  "Genoa":"https://fbref.com/en/squads/658bf2de/",
+  "Hellas Verona": "https://fbref.com/en/squads/0e72edf2/",
+  "Internazionale":"https://fbref.com/en/squads/d609edc0/",
+  "Juventus":"https://fbref.com/en/squads/e0652b02/",
+  "Lazio":"https://fbref.com/en/squads/7213da33/",
+  "Lecce": "https://fbref.com/en/squads/ffcbe334/",
+  "Milan": "https://fbref.com/en/squads/dc56fe14/",
+  "Monza": "https://fbref.com/en/squads/21680aa4/",
+  "Napoli":"https://fbref.com/en/squads/d48ad4ff/",
+  "Parma": "https://fbref.com/en/squads/eab4234c/",
+  "Roma":"https://fbref.com/en/squads/cf74a709/",
+  "Torino":"https://fbref.com/en/squads/105360fe/",
+  "Udinese":"https://fbref.com/en/squads/04eea015/",
+  "Venezia":"https://fbref.com/en/squads/af5d5982/",
+}
+
+Bundesliga_dict = {
+   "Augsburg":"https://fbref.com/en/squads/0cdc4311/",
+   "Bayern Munich": "https://fbref.com/en/squads/054efa67/",
+   "Bochum" : "https://fbref.com/en/squads/b42c6323/",
+   "Dortmund": "https://fbref.com/en/squads/add600ae/",
+   "Eintracht Frankfurt": "https://fbref.com/en/squads/f0ac8ee6/",
+   "Freiburg" : "https://fbref.com/en/squads/a486e511/",
+   "Gladbach": "https://fbref.com/en/squads/32f3ee20/",
+   "Heidenheim":"https://fbref.com/en/squads/18d9d2a7/",
+   "Hoffenheim":"https://fbref.com/en/squads/033ea6b8/",
+   "Holstein Kiel":"https://fbref.com/en/squads/2ac661d9/",
+   "Leverkusen": "https://fbref.com/en/squads/c7a9f859/",
+   "Mainz": "https://fbref.com/en/squads/a224b06a/",
+   "RB Leipzig": "https://fbref.com/en/squads/acbb6a5b/",
+   "St Pauli": "https://fbref.com/en/squads/54864664/",
+   "Stuttgart": "https://fbref.com/en/squads/598bc722/",
+   "Union Berlin": "https://fbref.com/en/squads/7a41008f/",
+   "Werder Bremen": "https://fbref.com/en/squads/62add3bf/",
+   "Wolfsburg": "https://fbref.com/en/squads/4eaa11d7/",
+}
+
+Ligue1_dict = {
+   "Angers": "https://fbref.com/en/squads/69236f98/",
+   "Auxerre": "https://fbref.com/en/squads/5ae09109/",
+   "Brest":"https://fbref.com/en/squads/fb08dbb3/",
+   "Le Havre":"https://fbref.com/en/squads/5c2737db/",
+   "Lens":"https://fbref.com/en/squads/fd4e0f7d/",
+   "Lille":"https://fbref.com/en/squads/cb188c0c/",
+   "Lyon": "https://fbref.com/en/squads/d53c0b06/",
+   "Marseille":"https://fbref.com/en/squads/5725cc7b/",
+   "Monaco":"https://fbref.com/en/squads/fd6114db/",
+   "Montpellier":"https://fbref.com/en/squads/281b0e73/",
+   "Nantes": "https://fbref.com/en/squads/d7a486cd/",
+   "Nice":"https://fbref.com/en/squads/132ebc33/",
+   "Paris S-G":"https://fbref.com/en/squads/e2d8892c/",
+   "Reims": "https://fbref.com/en/squads/7fdd64e0/",
+   "Rennes": "https://fbref.com/en/squads/b3072e00/",
+   "Saint Etienne": "https://fbref.com/en/squads/d298ef2c/",
+   "Strasbourg": "https://fbref.com/en/squads/c0d3eab4/",
+   "Toulouse": "https://fbref.com/en/squads/3f8c4b5f/",
+}
+
+leagues_teams = {
+    'Premier League': EPL_dict,
+    'La Liga': LaLiga_dict,
+    'Bundesliga': Bundesliga_dict,
+    'Serie A': SerieA_dict,
+    'Ligue 1': Ligue1_dict
+}
+
 # Initialize connection with database
 supabase = st.connection("supabase", type=SupabaseConnection)
 
 # Database functions
-
-def get_last_updated_time():
-    response = supabase.table("matches").select("last_updated").order("last_updated", desc=True).limit(1).execute()
-    if response.data:
-        return datetime.datetime.strptime(response.data[0]["last_updated"], "%Y-%m-%dT%H:%M:%S.%fZ")
-    return None
-
-def update_last_updated_time():
-    now = datetime.datetime.utcnow().isoformat()
-    response = supabase.table("matches").update({"last_updated": now}).gt("id", 0).execute()
-    return response
 
 # -------------------------
 # USERS
@@ -144,88 +254,59 @@ def get_team_name_by_id(team_id):
 # MATCHES
 # -------------------------
 
-def update_all_matches():
+def update_matchlogs(season=None, league=None, team_name=None, all_seasons=True):
     teams = get_all_teams()
     if isinstance(teams, list):
-      teams = pd.DataFrame(teams)
-
+        teams = pd.DataFrame(teams)
     if teams.empty:
         st.warning("❌ No teams found in the database!")
         return
 
-    total_teams = len(teams)
-    total_seasons = len(seasons)
-    st.info(f"🔄 Fetching data for {total_teams} teams across {total_seasons} seasons...")
+    if league:
+        teams = teams[teams['league'] == league]
+    if team_name:
+        teams = teams[teams['name'] == team_name]
 
-    for season in seasons:
+    if all_seasons:
+        seasons_to_update = seasons
+    else:
+        seasons_to_update = [season] if season else [seasons[0]]
+    
+    st.info(f"🔄 Updating matchlogs for {len(teams)} team(s) across {len(seasons_to_update)} season(s)...")
+    for season_val in seasons_to_update:
         for idx, team in teams.iterrows():
-            team_name = team["name"]
+            team_name_local = team["name"]
             team_url = team["team_url"]
             team_id = team["id"]
 
-            team_url_with_season = f"{team_url}{season}"
+            if season_val != seasons[0]: 
+                team_url = f"{team_url}{season_val}"
 
-            match_data = scrap_team_matchlogs(team_url_with_season)
-
+            match_data = scrap_team_matchlogs(team_url)
             if match_data:
                 for match in match_data:
                     match["team_id"] = team_id
-                    match["season"] = season
-
+                    match["season"] = season_val
                 match_data = clean_data_for_db(match_data)
-
                 upsert_match(match_data)
-                st.success(f"✅ Updated {team_name} ({season})")
+                st.success(f"✅ Updated matchlogs for {team_name_local} ({season_val})")
             else:
-                st.warning(f"⚠️ No data found for {team_name} ({season})")
-
-    update_last_updated_time()
-    st.success("🎉 All matches have been updated!")
-
-def update_last_season_matches():
-    teams = get_all_teams()
-    if isinstance(teams, list):
-        teams = pd.DataFrame(teams)
-
-    if teams.empty:
-        return "No teams found in the database!"
-
-    for idx, team in teams.iterrows():
-        team_name = team["name"]
-        team_url = team["team_url"]
-        team_id = team["id"]
-
-        match_data = scrap_team_matchlogs(team_url)
-        if match_data:
-            for match in match_data:
-                match["team_id"] = team_id
-                match["season"] = seasons[0]
-
-            match_data = clean_data_for_db(match_data)
-
-            upsert_match(match_data)
-            st.success(f"✅ Updated {team_name} ({seasons[0]})")
-        else:
-            st.warning(f"⚠️ No data found for {team_name} ({seasons[0]})")
-
-    update_last_updated_time()
-
-# Fetch match ID by match report link                                         
+                st.warning(f"⚠️ No data found for {team_name_local} ({season_val})")
+    st.success("🎉 All team matchlogs have been updated!")
+                                       
 def get_match_id_by_report_link(match_report_link):
     response = supabase.table("matches").select("id").eq("match_report_link", match_report_link).execute()
     if response.data:
         return response.data[0]["id"]
     return None
 
-# Insert or update a match
 def upsert_match(data):
     response = supabase.table("matches").upsert(
         data, 
-        on_conflict="team_id, opponent, date, season"
+        on_conflict="team_id, opponent, venue, competition, round, season, notes"
     ).execute()
     return response
 
-# Fetch matches for a given team and season
 def get_team_matches_by_season(team_id, season):
     try:
         response = supabase.table("matches").select("*").match({"team_id": team_id, "season": season}).execute()
@@ -236,6 +317,39 @@ def get_team_matches_by_season(team_id, season):
     except Exception as e:
         st.error(f"Error fetching matches: {e}")
         return pd.DataFrame() 
+    
+def check_and_update_data(team_id, team_name, season, league, update_stats=False):
+    if "update_attempted" not in st.session_state:
+        st.session_state.update_attempted = False
+
+    df = get_team_matches_by_season(team_id, season)
+    if df.empty:
+        st.info("Updating matchlogs...")
+        if not st.session_state.update_attempted:
+            try:
+                update_matchlogs(season=season, league=league, team_name=team_name, all_seasons=False)
+            except Exception as e:
+                st.error("Update matchlogs failed: " + str(e))
+            st.session_state.update_attempted = True
+            st.rerun()
+        else:
+            st.error("Matchlogs update did not succeed. Continuing without updated data.")
+
+    df['date'] = pd.to_datetime(df['date'], errors='coerce')
+    past_missing = df[(df['date'].dt.date < datetime.date.today()) & (df['result'].isna())]
+    if not past_missing.empty:
+        if not st.session_state.update_attempted:
+            try:
+                update_matchlogs(season=season, league=league, team_name=team_name, all_seasons=False)
+                if update_stats:
+                    st.info(f"Also updating match stats for {team_name} in {season}")
+                    update_match_stats(season=season, league=league, team_name=team_name, all_seasons=False)
+            except Exception as e:
+                st.error("Error updating past matches: " + str(e))
+            st.session_state.update_attempted = True
+            st.rerun()
+        else:
+            st.info("Some past matches still have missing results. Please try again later – updates usually occur the day after the round of a competition is completed.")
 
 # -------------------------
 # PLAYERS MATCH STATS
@@ -341,8 +455,12 @@ def prepare_match_player_stats_records(player_df, goalkeeper_df, match_id):
 
 # Insert or update player stats
 def upsert_players_stats(data):
+    df = pd.DataFrame(data)
+    df = df.drop_duplicates(subset=["match_id", "team", "player_name", "shirt_number"])
+    data = df.to_dict(orient="records")
+    cleaned_data = clean_data_for_db(data)
     response = supabase.table("match_player_stats").upsert(
-        data,
+        cleaned_data,
         on_conflict="match_id, team, player_name, shirt_number"
     ).execute()
     return response
@@ -364,8 +482,12 @@ def get_match_player_stats_by_team(match_id, team_1, team_2):
 
         stats_df = pd.DataFrame(response.data)
 
-        team_1_stats = stats_df[stats_df["team"] == team_1]
-        team_2_stats = stats_df[stats_df["team"] == team_2]
+        stats_df["team_norm"] = stats_df["team"].apply(normalize_str)
+        team_1_norm = normalize_str(team_1)
+        team_2_norm = normalize_str(team_2)
+        
+        team_1_stats = stats_df[stats_df["team_norm"] == team_1_norm]
+        team_2_stats = stats_df[stats_df["team_norm"] == team_2_norm]
 
         team_1_field_players = team_1_stats[team_1_stats["position"] != "GK"]
         team_1_keepers = team_1_stats[team_1_stats["position"] == "GK"]
@@ -385,126 +507,173 @@ def stats_exist(match_id):
         return True
     return False
 
-# Update all matchstats for all teams and all seasons
-def update_all_match_stats():
+def update_match_stats(season=None, league=None, team_name=None, all_seasons=True):
     teams = get_all_teams()
     if isinstance(teams, list):
         teams = pd.DataFrame(teams)
-
     if teams.empty:
         st.warning("❌ No teams found in the database!")
         return
 
-    total_teams = len(teams)
-    total_seasons = len(seasons)
-    st.info(f"🔄 Fetching match stats for {total_teams} teams across {total_seasons} seasons...")
+    if league:
+        teams = teams[teams['league'] == league]
+    if team_name:
+        teams = teams[teams['name'] == team_name]
 
-    for season in seasons:
+    if all_seasons:
+        seasons_to_update = seasons
+    else:
+        seasons_to_update = [season] if season else [seasons[0]]
+    
+    st.info(f"🔄 Updating match stats for {len(teams)} team(s) across {len(seasons_to_update)} season(s)...")
+    for season_val in seasons_to_update:
         for idx, team in teams.iterrows():
             team_id = team["id"]
-            team_name = team["name"]
-
-            matches = get_team_matches_by_season(team_id, season)
+            team_name_local = team["name"]
+            matches = get_team_matches_by_season(team_id, season_val)
             if matches.empty:
-                st.warning(f"⚠️ No matches found for {team_name} in {season}")
+                st.warning(f"⚠️ No matches found for {team_name_local} in {season_val}")
                 continue
 
             played_matches = matches[matches["result"].notna()]
-            for idx, match in played_matches.iterrows():
+            for idx2, match in played_matches.iterrows():
                 match_id = match["id"]
                 match_report_link = match["match_report_link"]
                 opponent = match["opponent"]
                 venue = match["venue"]
 
                 if stats_exist(match_id):
-                    st.write(f"Stats for {team_name} vs {opponent} ({season}) are already in database.")
                     continue
-
                 if not match_report_link:
-                    st.warning(f"⚠️ No match report link for {team_name} vs {opponent} ({season})")
+                    st.warning(f"⚠️ No match report link for {team_name_local} vs {opponent} ({season_val})")
                     continue
 
-                st.write(f"📊 Updating stats for {team_name} vs {opponent} ({season})...")
-
-                field_players_stats_df, keepers_stats_df = scrap_match_stats(match_report_link, team_name, opponent, venue)
-
+                st.write(f"📊 Updating stats for {team_name_local} vs {opponent} ({season_val})...")
+                field_players_stats_df, keepers_stats_df = scrap_match_stats(match_report_link, team_name_local, opponent, venue)
                 if field_players_stats_df.empty or keepers_stats_df.empty:
-                    st.warning(f"⚠️ No player stats available for {team_name} vs {opponent} ({season})")
+                    st.warning(f"⚠️ No player stats available for {team_name_local} vs {opponent} ({season_val})")
                     continue
-
                 records = prepare_match_player_stats_records(field_players_stats_df, keepers_stats_df, match_id)
                 if records:
                     upsert_players_stats(records)
-                    st.success(f"✅ Stats updated for {team_name} vs {opponent} ({season})")
-
-    update_last_updated_time()
+                    st.success(f"✅ Stats updated for {team_name_local} vs {opponent} ({season_val})")
     st.success("🎉 All match stats have been updated!")
-
-
-def update_latest_match_stats():
-    teams = get_all_teams()
-    if isinstance(teams, list):
-        teams = pd.DataFrame(teams)
-
-    if teams.empty:
-        st.warning("❌ No teams found in the database!")
-        return
-
-    latest_season = seasons[0] 
-    matches = supabase.table("matches").select("*").eq("season", latest_season).execute()
-
-    if matches.data:
-        matches_df = pd.DataFrame(matches.data)
-    else:
-        st.warning(f"❌ No matches found for season {latest_season}!")
-        return
-
-    played_matches = matches_df[matches_df["result"].notna()]
-
-    if played_matches.empty:
-        st.warning(f"❌ No played matches available for season {latest_season}!")
-        return
-
-    total_matches = len(played_matches)
-    st.info(f"🔄 Fetching player stats for {total_matches} played matches in {latest_season}...")
-
-    for idx, match in played_matches.iterrows():
-        match_id = match["id"]
-        if stats_exist(match_id):
-            continue
-        match_url = match["match_report_link"]
-        home_team = get_team_name_by_id(match["team_id"])
-        away_team = match["opponent"]
-        venue = match["venue"]
-
-        st.write(f"📊 Updating stats for match {idx + 1}/{total_matches} ({latest_season})...")
-
-        field_players_stats, keepers_stats = scrap_match_stats(match_url, home_team, away_team, venue)
-
-        if field_players_stats.empty or keepers_stats.empty:
-            st.warning(f"⚠️ No stats data found for match {match_id}")
-            continue
-
-        records = prepare_match_player_stats_records(field_players_stats, keepers_stats, match_id)
-
-        if records:
-            try:
-                upsert_players_stats(records)
-                st.success(f"✅ Updated stats for match {match_id}")
-            except Exception as e:
-                st.error(f"❌ Error updating stats for match {match_id}: {e}")
-
-    st.success(f"🎉 All played match stats for {latest_season} have been updated!")
 
 # -------------------------
 # UTILITY FUNCTIONS
 # -------------------------
 
-# Replace NaN values with None
+# Replace NaN values with None or empty  
 def clean_data_for_db(data):
     if isinstance(data, list): 
-        return [{k: (None if pd.isna(v) else v) for k, v in record.items()} for record in data]
+        return [
+            {k: ("" if (pd.isna(v) or (isinstance(v, str) and v.strip().lower() == "nan")) and k=="notes" else
+                 (None if pd.isna(v) or (isinstance(v, str) and v.strip().lower() == "nan") else v))
+             for k, v in record.items()}
+            for record in data
+        ]
     elif isinstance(data, dict):  
-        return {k: (None if pd.isna(v) else v) for k, v in data.items()}
+        return {
+            k: ("" if (pd.isna(v) or (isinstance(v, str) and v.strip().lower() == "nan")) and k=="notes" else
+                (None if pd.isna(v) or (isinstance(v, str) and v.strip().lower() == "nan") else v))
+            for k, v in data.items()
+        }
     else:
         raise ValueError("Unsupported data format. Expected list or dict.")
+
+# Returns team names without diacritics
+def normalize_str(s):
+    if not isinstance(s, str):
+        return s
+    normalized = unicodedata.normalize('NFKD', s)
+    ascii_bytes = normalized.encode('ASCII', 'ignore')
+    return ascii_bytes.decode('utf-8').lower()
+
+
+# Additional function to calculate display key team metrics
+def calculate_and_display_key_team_metrics(df, selected_season, selected_team):
+        total_wins = df[df['result'] == 'W'].shape[0]
+        total_draws = df[df['result'] == 'D'].shape[0]
+        total_losses = df[df['result'] == 'L'].shape[0]
+        matches_played = total_wins + total_draws + total_losses
+
+        df_played = df.dropna(subset=['result']).sort_values(by='date').reset_index(drop=True)
+
+        current_streak = 0
+        for result in reversed(df_played['result']):
+            if result in ['W', 'D']:
+                current_streak += 1
+            else:
+                break
+
+        longest_streak = 0
+        temp_streak = 0
+        for result in df_played['result']:
+            if result in ['W', 'D']:
+                temp_streak += 1
+                longest_streak = max(longest_streak, temp_streak)
+            else:
+                temp_streak = 0
+
+        gf_values = df_played['gf'].apply(
+            lambda x: float(x.split('(')[0]) if isinstance(x, str) else float(x) if pd.notna(x) else 0.0
+        )
+        ga_values = df_played['ga'].apply(
+            lambda x: float(x.split('(')[0]) if isinstance(x, str) else float(x) if pd.notna(x) else 0.0
+        )
+
+        average_goals_for = gf_values.mean()
+        average_goals_against = ga_values.mean()
+        total_goals_for = gf_values.sum()
+        total_goals_against = ga_values.sum()
+        average_possession = df_played['possession'].mean()
+
+        df['xg_filled'] = df.apply(
+        lambda row: float(row['gf'].split('(')[0]) if pd.isna(row['xg']) and isinstance(row['gf'], str)
+        else float(row['gf']) if pd.isna(row['xg']) and pd.notna(row['gf'])
+        else float(row['xg'].split('(')[0]) if isinstance(row['xg'], str)
+        else row['xg'], axis=1
+        )
+        df['xga_filled'] = df.apply(
+            lambda row: float(row['ga'].split('(')[0]) if pd.isna(row['xga']) and isinstance(row['ga'], str)
+            else float(row['ga']) if pd.isna(row['xga']) and pd.notna(row['ga'])
+            else float(row['xga'].split('(')[0]) if isinstance(row['xga'], str)
+            else row['xga'], axis=1
+        )
+
+        df['xg_filled'] = pd.to_numeric(df['xg_filled'], errors='coerce')
+        df['xga_filled'] = pd.to_numeric(df['xga_filled'], errors='coerce')
+
+        average_xG = df['xg_filled'].mean(skipna=True)
+        total_xG = df['xg_filled'].sum(skipna=True)
+        average_xGA = df['xga_filled'].mean(skipna=True)
+        total_xGA = df['xga_filled'].sum(skipna=True)
+
+
+        home_matches = df[df['venue'] == 'Home']
+        average_home_attendance = home_matches['attendance'].mean()
+
+
+        st.subheader(f"Key {selected_team} metrics for season {selected_season}")
+
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric(label="📅 Matches played", value=f"{matches_played}")
+            st.metric(label="🎯⚽ Goals For", value=f"{total_goals_for:.0f}")
+            st.metric(label="🎯 Total xG", value=f"{total_xG:.1f}" if total_xG is not None else "No data")
+            st.metric(label="⏳ Average Possession", value=f"{average_possession:.1f}%")
+        with col2:
+            st.metric(label="🏆 Wins", value=f"{total_wins}")
+            st.metric(label="❌⚽ Goals Against", value=f"{total_goals_against:.0f}")
+            st.metric(label="❌ Total xGA", value=f"{total_xGA:.1f}" if total_xGA is not None else "No data")
+            st.metric(label="👥 Average Home Attendance", value=f"{average_home_attendance:.0f}") 
+        with col3:
+            st.metric(label="🤝 Draws", value=f"{total_draws}")
+            st.metric(label="⚽📈 Average Goals For", value=f"{average_goals_for:.1f}")
+            st.metric(label="🎯📊 Average xG", value=f"{average_xG:.1f}" if average_xG is not None else "No data")
+            st.metric(label="🔥 Current Unbeaten Streak", value=f"{current_streak}")
+        with col4:
+            st.metric(label="❌ Losses", value=f"{total_losses}")
+            st.metric(label="⚽📉 Average Goals Against", value=f"{average_goals_against:.1f}")
+            st.metric(label="❌📊 Average xGA", value=f"{average_xGA:.1f}" if average_xGA is not None else "No data")
+            st.metric(label="🔥 Longest Unbeaten Streak", value=f"{longest_streak}")

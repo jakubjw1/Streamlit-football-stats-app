@@ -1,4 +1,3 @@
-import streamlit as st
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
@@ -125,12 +124,12 @@ def scrap_match_stats(match_url, home_team, away_team, venue):
                 logging.warning(f"No keeper stats found for {home_team} vs {away_team}")
 
             labels, keepers_labels = [], []
-            if venue == "Home":
+            if venue == "Home" or venue == "Neutral":
                 labels = [f"{home_team} player stats table", f"{away_team} player stats table"]
                 keepers_labels = [f"{home_team} keeper stats table", f"{away_team} keeper stats table"]
             elif venue == "Away":
                 labels = [f"{away_team} player stats table", f"{home_team} player stats table"]
-                keepers_labels = [f"{away_team} keeper stats table", f"{home_team} keeper stats table"]
+                keepers_labels = [f"{away_team} keeper stats table", f"{home_team} keeper stats table"]         
 
             field_players_stats_df, keepers_stats_df = [], []
 

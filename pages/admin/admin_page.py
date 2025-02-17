@@ -2,23 +2,7 @@ import streamlit as st
 import pandas as pd
 from email_validator import validate_email, EmailNotValidError
 import bcrypt
-from pages.team_dashboard_page import leagues_teams
-from database import (
-    get_all_users,
-    update_user_data,
-    add_user,
-    delete_user,
-    get_pending_coach_requests,
-    get_all_teams,
-    add_team,
-    update_team_data,
-    delete_team,
-    check_team_exists,
-    update_all_matches,
-    update_last_season_matches,
-    update_all_match_stats,
-    update_latest_match_stats
-)
+from database import seasons, leagues_teams, get_all_users, update_user_data, add_user, delete_user, get_pending_coach_requests, get_all_teams, add_team, update_team_data, delete_team, check_team_exists, update_matchlogs, update_match_stats
 
 st.title("Admin Dashboard :material/admin_panel_settings:")
 
@@ -234,7 +218,7 @@ with tabs[1]:
               st.write(f"Selected Request for User: {selected_request['username']} (Email: {selected_request['email']})")
 
               st.write("### Approve Request")
-              assigned_team = st.selectbox("Assign a Team", all_teams_df["name"].tolist(), key="assign_team")
+              assigned_team = st.selectbox("Assign a Team", all_teams_df["name"].tolist(), key="assign_team", index=None)
 
               if st.button("Approve Request"):
                   try:
@@ -395,27 +379,26 @@ with tabs[2]:
 # Tab 4: Database Updates
 with tabs[3]:
     st.subheader("Database Updates")
+    
+    selected_update_type = st.radio("Update type:", ("Matchlogs", "Match Stats"))
+    update_all_seasons = st.radio("Update for:", ("All seasons", "Specific season")) == "All seasons"
+    selected_season = None
+    if not update_all_seasons:
+        selected_season = st.selectbox("Select season:", seasons)
 
-    col1, col2 = st.columns(2)
-    with col1:
-      st.write("#### Manual Update Team Matchlogs :material/update:")
-      if st.button("Update all seasons matchlogs", help="It will take more than an hour!!!"):
-        with st.spinner("Fetching data..."):
-            update_all_matches()
-        st.success("✅ Team matchlogs has been updated!")
+    update_target = st.radio("Target:", ("All Leagues", "Specific League", "Specific Team"))
+    selected_league = None
+    selected_team = None
+    if update_target == "Specific League":
+        selected_league = st.selectbox("Select League:", list(leagues_teams.keys()))
+    elif update_target == "Specific Team":
+        selected_league = st.selectbox("Select League:", list(leagues_teams.keys()))
+        available_teams = list(leagues_teams[selected_league].keys())
+        selected_team = st.selectbox("Select Team:", available_teams)
 
-      if st.button("Update latest season matches"): 
-        with st.spinner("Fetching data..."):
-            update_last_season_matches()
-        st.success("✅ Team matchlogs has been updated!")
-    with col2:
-      st.write("#### Manual Update Team Match Statistics :material/update:")
-      if st.button("Update all match stats", help="This will take a long time!!!"):
-          with st.spinner("Fetching player statistics..."):
-              update_all_match_stats()
-          st.success("✅ Player statistics have been updated!")
-
-      if st.button("Update latest season match stats"):
-          with st.spinner("Fetching player statistics..."):
-              update_latest_match_stats()
-          st.success("✅ Player statistics have been updated!")
+    if selected_update_type == "Matchlogs":
+        if st.button("Update Matchlogs"):
+            update_matchlogs(season=selected_season, league=selected_league, team_name=selected_team, all_seasons=update_all_seasons)
+    elif selected_update_type == "Match Stats":
+        if st.button("Update Match Stats"):
+            update_match_stats(season=selected_season, league=selected_league, team_name=selected_team, all_seasons=update_all_seasons)

@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 import time
-from database import add_team, update_favourites, get_team_by_name, upsert_match, get_team_matches_by_season, clean_data_for_db, get_match_id_by_report_link,prepare_match_player_stats_records, upsert_players_stats, get_match_player_stats_by_team
-from scrapers import scrap_match_stats, scrap_team_matchlogs
+from database import seasons, leagues_teams, add_team, update_favourites, get_team_by_name, get_team_matches_by_season, get_match_id_by_report_link, prepare_match_player_stats_records, upsert_players_stats, get_match_player_stats_by_team, check_and_update_data, calculate_and_display_key_team_metrics
+from scrapers import scrap_match_stats
 
 st.logo("assets/app_logo/statfield-high-resolution-logo-transparent.png", size="large") 
 
@@ -10,8 +10,8 @@ st.logo("assets/app_logo/statfield-high-resolution-logo-transparent.png", size="
 
 if "username" in st.session_state:
     username = st.session_state.username
-
-#### FUNCTIONS
+if "favourites" in st.session_state:
+    favourites = st.session_state.favourites
 
 # Determine match MVP's
 def calculate_mvp_score(field_players_stats_df, keepers_stats_df, selected_team, match_result):
@@ -252,130 +252,6 @@ def prepare_and_display_match_stats(
         st.error("Insufficient data to determine MVPs for this match.")
         st.divider()
 
-#### DICTIONARIES 
-
-EPL_dict = {
-  "Arsenal":"https://fbref.com/en/squads/18bb7c10/",
-  "Aston Villa":"https://fbref.com/en/squads/8602292d/",
-  "Bournemouth":"https://fbref.com/en/squads/4ba7cbea/",
-  "Brentford": "https://fbref.com/en/squads/cd051869/",
-  "Brighton":"https://fbref.com/en/squads/d07537b9/",
-  "Chelsea": "https://fbref.com/en/squads/cff3d9bb/",
-  "Crystal Palace": "https://fbref.com/en/squads/47c64c55/",
-  "Everton": "https://fbref.com/en/squads/d3fd31cc/",
-  "Fulham": "https://fbref.com/en/squads/fd962109/",
-  "Ipswich Town": "https://fbref.com/en/squads/b74092de/",
-  "Leicester City":"https://fbref.com/en/squads/a2d435b3/",
-  "Liverpool":"https://fbref.com/en/squads/822bd0ba/",
-  "Manchester City": "https://fbref.com/en/squads/b8fd03ef/",
-  "Manchester United": "https://fbref.com/en/squads/19538871/",
-  "Newcastle":"https://fbref.com/en/squads/b2b47a98/",
-  "Nottingham Forest": "https://fbref.com/en/squads/e4a775cb/",
-  "Southampton": "https://fbref.com/en/squads/33c895d4/",
-  "Tottenham Hotspur": "https://fbref.com/en/squads/361ca564/",
-  "West Ham":"https://fbref.com/en/squads/7c21e445/",
-  "Wolves": "https://fbref.com/en/squads/8cec06e1/"
-}
-
-LaLiga_dict = {
-  "Alaves":"https://fbref.com/en/squads/8d6fd021/",
-  "Athletic Club":"https://fbref.com/en/squads/2b390eca/",
-  "Atletico Madrid":"https://fbref.com/en/squads/db3b9613/",
-  "Barcelona":"https://fbref.com/en/squads/206d90db/",
-  "Betis":"https://fbref.com/en/squads/fc536746/",
-  "Celta Vigo":"https://fbref.com/en/squads/f25da7fb/",
-  "Espanyol":"https://fbref.com/en/squads/a8661628/",
-  "Getafe":"https://fbref.com/en/squads/7848bd64/",
-  "Girona":"https://fbref.com/en/squads/9024a00a/",
-  "Las Palmas":"https://fbref.com/en/squads/0049d422/",
-  "Leganes":"https://fbref.com/en/squads/7c6f2c78/",
-  "Mallorca":"https://fbref.com/en/squads/2aa12281/",
-  "Osasuna":"https://fbref.com/en/squads/03c57e2b/",
-  "Rayo Vallecano":"https://fbref.com/en/squads/98e8af82/",
-  "Real Madrid":"https://fbref.com/en/squads/53a2f082/",
-  "Real Sociedad":"https://fbref.com/en/squads/e31d1cd9/",
-  "Sevilla":"https://fbref.com/en/squads/ad2be733/",
-  "Valencia":"https://fbref.com/en/squads/dcc91a7b/",
-  "Valladolid":"https://fbref.com/en/squads/17859612/",
-  "Villarreal":"https://fbref.com/en/squads/2a8183b3/",
-}
-
-SerieA_dict = {
-  "Atalanta":"https://fbref.com/en/squads/922493f3/",
-  "Bologna":"https://fbref.com/en/squads/1d8099f8/",
-  "Cagliari":"https://fbref.com/en/squads/c4260e09/",
-  "Como": "https://fbref.com/en/squads/28c9c3cd/",
-  "Empoli":"https://fbref.com/en/squads/a3d88bd8/",
-  "Fiorentina":"https://fbref.com/en/squads/421387cf/",
-  "Genoa":"https://fbref.com/en/squads/658bf2de/",
-  "Hellas Verona": "https://fbref.com/en/squads/0e72edf2/",
-  "Internazionale":"https://fbref.com/en/squads/d609edc0/",
-  "Juventus":"https://fbref.com/en/squads/e0652b02/",
-  "Lazio":"https://fbref.com/en/squads/7213da33/",
-  "Lecce": "https://fbref.com/en/squads/ffcbe334/",
-  "Milan": "https://fbref.com/en/squads/dc56fe14/",
-  "Monza": "https://fbref.com/en/squads/21680aa4/",
-  "Napoli":"https://fbref.com/en/squads/d48ad4ff/",
-  "Parma": "https://fbref.com/en/squads/eab4234c/",
-  "Roma":"https://fbref.com/en/squads/cf74a709/",
-  "Torino":"https://fbref.com/en/squads/105360fe/",
-  "Udinese":"https://fbref.com/en/squads/04eea015/",
-  "Venezia":"https://fbref.com/en/squads/af5d5982/",
-}
-
-Bundesliga_dict = {
-   "Augsburg":"https://fbref.com/en/squads/0cdc4311/",
-   "Bayern Munich": "https://fbref.com/en/squads/054efa67/",
-   "Bochum" : "https://fbref.com/en/squads/b42c6323/",
-   "Dortmund": "https://fbref.com/en/squads/add600ae/",
-   "Eintracht Frankfurt": "https://fbref.com/en/squads/f0ac8ee6/",
-   "Freiburg" : "https://fbref.com/en/squads/a486e511/",
-   "Gladbach": "https://fbref.com/en/squads/32f3ee20/",
-   "Heidenheim":"https://fbref.com/en/squads/18d9d2a7/",
-   "Hoffenheim":"https://fbref.com/en/squads/033ea6b8/",
-   "Holstein Kiel":"https://fbref.com/en/squads/2ac661d9/",
-   "Leverkusen": "https://fbref.com/en/squads/c7a9f859/",
-   "Mainz": "https://fbref.com/en/squads/a224b06a/",
-   "RB Leipzig": "https://fbref.com/en/squads/acbb6a5b/",
-   "St Pauli": "https://fbref.com/en/squads/54864664/",
-   "Stuttgart": "https://fbref.com/en/squads/598bc722/",
-   "Union Berlin": "https://fbref.com/en/squads/7a41008f/",
-   "Werder Bremen": "https://fbref.com/en/squads/62add3bf/",
-   "Wolfsburg": "https://fbref.com/en/squads/4eaa11d7/",
-}
-
-Ligue1_dict = {
-   "Angers": "https://fbref.com/en/squads/69236f98/",
-   "Auxerre": "https://fbref.com/en/squads/5ae09109/",
-   "Brest":"https://fbref.com/en/squads/fb08dbb3/",
-   "Le Havre":"https://fbref.com/en/squads/5c2737db/",
-   "Lens":"https://fbref.com/en/squads/fd4e0f7d/",
-   "Lille":"https://fbref.com/en/squads/cb188c0c/",
-   "Lyon": "https://fbref.com/en/squads/d53c0b06/",
-   "Marseille":"https://fbref.com/en/squads/5725cc7b/",
-   "Monaco":"https://fbref.com/en/squads/fd6114db/",
-   "Montpellier":"https://fbref.com/en/squads/281b0e73/",
-   "Nantes": "https://fbref.com/en/squads/d7a486cd/",
-   "Nice":"https://fbref.com/en/squads/132ebc33/",
-   "Paris S-G":"https://fbref.com/en/squads/e2d8892c/",
-   "Reims": "https://fbref.com/en/squads/7fdd64e0/",
-   "Rennes": "https://fbref.com/en/squads/b3072e00/",
-   "Saint Etienne": "https://fbref.com/en/squads/d298ef2c/",
-   "Strasbourg": "https://fbref.com/en/squads/c0d3eab4/",
-   "Toulouse": "https://fbref.com/en/squads/3f8c4b5f/",
-}
-
-leagues_teams = {
-    'Premier League': EPL_dict,
-    'La Liga': LaLiga_dict,
-    'Bundesliga': Bundesliga_dict,
-    'Serie A': SerieA_dict,
-    'Ligue 1': Ligue1_dict
-}
-
-seasons = ['2024-2025', '2023-2024', '2022-2023', '2021-2022', '2020-2021', 
-           '2019-2020', '2018-2019', '2017-2018', '2016-2017', '2015-2016', '2014-2015']
-
 # Sidebar
 with st.sidebar:
     st.header('Sidebar')
@@ -384,26 +260,26 @@ with st.sidebar:
     selected_league = st.session_state.get("selected_league", None)
 
     # Sidebar - League selection
-    league_options = ["Select League..."] + list(leagues_teams.keys())
+    league_options = list(leagues_teams.keys())
     selected_league = st.sidebar.selectbox(
         'Select League', 
         league_options,
-        index=league_options.index(selected_league) if selected_league in leagues_teams.keys() else 0
+        index=league_options.index(selected_league) if selected_league in leagues_teams.keys() else None
     )
 
     # Sidebar - Team selection based on selected league
     if selected_league and selected_league != "Select League...":
-        teams_list = ["Select Team..."] + list(leagues_teams[selected_league].keys())
+        teams_list = list(leagues_teams[selected_league].keys())
         selected_team = st.sidebar.selectbox(
             'Select Team', 
             teams_list,
-            index=teams_list.index(selected_team) if selected_team in teams_list else 0  
+            index=teams_list.index(selected_team) if selected_team in teams_list else None 
         )
     else:
         selected_team = None
 
     # Sidebar - Season selection
-    selected_season = st.sidebar.selectbox('Select Season', seasons, index=0)
+    selected_season = st.sidebar.selectbox('Select Season', seasons, index=0, )
 
 if selected_league and selected_team and selected_season and selected_team != "Select Team...":
 
@@ -416,87 +292,13 @@ if selected_league and selected_team and selected_season and selected_team != "S
         add_team(selected_team, selected_league, team_url)
         team_data = get_team_by_name(selected_team)
         team_id = team_data['id']
-        scraped_match_data = scrap_team_matchlogs(team_url_with_season)
 
-        if isinstance(scraped_match_data, list) and len(scraped_match_data) > 0:
-            for match in scraped_match_data:
-                match['team_id'] = team_id 
-                match['season'] = selected_season
-            cleaned_match_data = clean_data_for_db(scraped_match_data)
-            upsert_match(cleaned_match_data)
-        else:
-            st.warning("No match data available or retrieved data is empty.")
-    df = get_team_matches_by_season(team_id, selected_season)
-    
+    check_and_update_data(team_id=team_id, team_name=selected_team, season=selected_season, league=selected_league, update_stats=False)
+    df = get_team_matches_by_season(team_id=team_id, season=selected_season)
+
     if df.empty:
         st.error("Failed to retrieve matchlogs. Please try again later.")
     else: 
-        if 'formation' in df.columns and not df['formation'].isnull().all():
-            common_formation = df['formation'].mode()[0]
-        else:
-            common_formation = "No data"
-
-        total_wins = df[df['result'] == 'W'].shape[0]
-        total_draws = df[df['result'] == 'D'].shape[0]
-        total_losses = df[df['result'] == 'L'].shape[0]
-        matches_played = total_wins + total_draws + total_losses
-
-        df_played = df.dropna(subset=['result']).sort_values(by='date').reset_index(drop=True)
-
-        current_streak = 0
-        for result in reversed(df_played['result']):
-            if result in ['W', 'D']:
-                current_streak += 1
-            else:
-                break
-
-        longest_streak = 0
-        temp_streak = 0
-        for result in df_played['result']:
-            if result in ['W', 'D']:
-                temp_streak += 1
-                longest_streak = max(longest_streak, temp_streak)
-            else:
-                temp_streak = 0
-
-        gf_values = df['gf'].apply(
-            lambda x: float(x.split('(')[0]) if isinstance(x, str) else float(x) if pd.notna(x) else 0.0
-        )
-        ga_values = df['ga'].apply(
-            lambda x: float(x.split('(')[0]) if isinstance(x, str) else float(x) if pd.notna(x) else 0.0
-        )
-
-        average_goals_for = gf_values.mean()
-        average_goals_against = ga_values.mean()
-        total_goals_for = gf_values.sum()
-        total_goals_against = ga_values.sum()
-        average_possession = df['possession'].mean()
-
-        df['xg_filled'] = df.apply(
-        lambda row: float(row['gf'].split('(')[0]) if pd.isna(row['xg']) and isinstance(row['gf'], str)
-        else float(row['gf']) if pd.isna(row['xg']) and pd.notna(row['gf'])
-        else float(row['xg'].split('(')[0]) if isinstance(row['xg'], str)
-        else row['xg'], axis=1
-        )
-        df['xga_filled'] = df.apply(
-            lambda row: float(row['ga'].split('(')[0]) if pd.isna(row['xga']) and isinstance(row['ga'], str)
-            else float(row['ga']) if pd.isna(row['xga']) and pd.notna(row['ga'])
-            else float(row['xga'].split('(')[0]) if isinstance(row['xga'], str)
-            else row['xga'], axis=1
-        )
-
-        df['xg_filled'] = pd.to_numeric(df['xg_filled'], errors='coerce')
-        df['xga_filled'] = pd.to_numeric(df['xga_filled'], errors='coerce')
-
-        average_xG = df['xg_filled'].mean(skipna=True)
-        total_xG = df['xg_filled'].sum(skipna=True)
-        average_xGA = df['xga_filled'].mean(skipna=True)
-        total_xGA = df['xga_filled'].sum(skipna=True)
-
-
-        home_matches = df[df['venue'] == 'Home']
-        average_home_attendance = home_matches['attendance'].mean()
-
         with st.container(border=True): team_col1, team_col2 = st.columns([3,4], gap="medium", vertical_alignment="top")
         with team_col1:
             st.subheader(f"You have selected {selected_team} from {selected_league}.")
@@ -504,49 +306,30 @@ if selected_league and selected_team and selected_season and selected_team != "S
             with col1: 
                 st.image(f"assets/team_logos/{selected_league}/{selected_team}.png", width=139)
                 if st.session_state.role == "fan":
-                    if "favourites" in st.session_state:
-                        if selected_team in st.session_state.favourites:
-                            if st.button("Remove from Favourites"):
+                    if selected_team in favourites:
+                        if st.button("Remove from Favourites"):
+                            try:
+                                update_favourites(username, selected_team, "remove")
+                                favourites.remove(selected_team)
+                                st.rerun()
+                            except ValueError as e:
+                                st.error(str(e))
+                    else:
+                        if st.button("Add to Favourites"):
                                 try:
-                                    update_favourites(username, selected_team, "remove")
-                                    st.success(f"{selected_team} removed from your favourites.")
+                                    update_favourites(username, selected_team, "add")
+                                    favourites.append(selected_team)
+                                    st.rerun()
                                 except ValueError as e:
                                     st.error(str(e))
-                        else:
-                            if st.button("Add to Favourites"):
-                                    try:
-                                        update_favourites(username, selected_team, "add")
-                                        st.success(f"{selected_team} added to your favourites.")
-                                    except ValueError as e:
-                                        st.error(str(e))
-                    else:
-                        st.warning("You need to log in to manage your favourite teams.")
+                if 'formation' in df.columns and not df['formation'].isnull().all():
+                    common_formation = df['formation'].mode()[0]
+                else:
+                    common_formation = "No data"
                 st.metric(label="Formation (most commonly used)", value=f"{common_formation}")
 
         with team_col2:
-            st.subheader(f"Basic stats for season {selected_season}")
-
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
-                st.metric(label="📅 Matches played", value=f"{matches_played}")
-                st.metric(label="🎯⚽ Goals For", value=f"{total_goals_for:.0f}")
-                st.metric(label="🎯 Total xG", value=f"{total_xG:.1f}" if total_xG is not None else "No data")
-                st.metric(label="⏳ Average Possession", value=f"{average_possession:.1f}%")
-            with col2:
-                st.metric(label="🏆 Wins", value=f"{total_wins}")
-                st.metric(label="❌⚽ Goals Against", value=f"{total_goals_against:.0f}")
-                st.metric(label="❌ Total xGA", value=f"{total_xGA:.1f}" if total_xGA is not None else "No data")
-                st.metric(label="👥 Average Home Attendance", value=f"{average_home_attendance:.0f}") 
-            with col3:
-                st.metric(label="🤝 Draws", value=f"{total_draws}")
-                st.metric(label="⚽📈 Average Goals For", value=f"{average_goals_for:.1f}")
-                st.metric(label="🎯📊 Average xG", value=f"{average_xG:.1f}" if average_xG is not None else "No data")
-                st.metric(label="🔥 Current Streak", value=f"{current_streak}")
-            with col4:
-                st.metric(label="❌ Losses", value=f"{total_losses}")
-                st.metric(label="⚽📉 Average Goals Against", value=f"{average_goals_against:.1f}")
-                st.metric(label="❌📊 Average xGA", value=f"{average_xGA:.1f}" if average_xGA is not None else "No data")
-                st.metric(label="🔥 Longest Streak", value=f"{longest_streak}")
+            calculate_and_display_key_team_metrics(df, selected_season, selected_team)
         
         st.subheader(f"Scores and fixtures of {selected_team}")
         df = df.sort_values(by='date', ascending=True)
@@ -570,14 +353,9 @@ if selected_league and selected_team and selected_season and selected_team != "S
                     match_id = get_match_id_by_report_link(match_report_link)
 
                     if match_id:
-                        with st.spinner("Fetching match stats from the database..."):
-                            for _ in range(5):
-                                (team_1_field_players, team_1_keepers), (team_2_field_players, team_2_keepers) = get_match_player_stats_by_team(
-                                    match_id, selected_team, opponent
-                                )
-                                if not team_1_field_players.empty or not team_2_field_players.empty:
-                                    break
-                                time.sleep(1)
+                        (team_1_field_players, team_1_keepers), (team_2_field_players, team_2_keepers) = get_match_player_stats_by_team(
+                            match_id, selected_team, opponent
+                        )
 
                         if not team_1_field_players.empty or not team_2_field_players.empty:
                             sorted_mvp_scores = calculate_mvp_score(
